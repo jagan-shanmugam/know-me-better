@@ -39,5 +39,10 @@ def test_llm_langchain(model_name="databricks/dbrx-instruct"):
 
 if __name__ == "__main__":
     load_dotenv()
-    test_llm_openai()
-    test_llm_langchain()
+
+    # model_name = "databricks/dbrx-instruct"
+    model_name = "meta-llama/Meta-Llama-3-8B-Instruct"
+
+    test_llm_openai(model_name=model_name)
+
+    test_llm_langchain(model_name=model_name)
