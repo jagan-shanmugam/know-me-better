@@ -10,18 +10,27 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
+from langchain.chains import RetrievalQA
 
 from supabase.client import Client, create_client
 
 
-def initialize_RAG(embedding_model="all-mpnet-base-v2", 
-                   model_name="databricks/dbrx-instruct"):
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
 
-    # Prompt template
-    template = """Answer the question based only on the following context, which can include text and tables:
+
+def initialize_rag(embedding_model="all-mpnet-base-v2"):
+
+    template = """Use the following pieces of context to answer the question at the end.
+    If you don't know the answer, just say that you don't know, don't try to make up an answer.
+    Use three sentences maximum and keep the answer as concise as possible.
+    Always say "thanks for asking!" at the end of the answer.
+
     {context}
+
     Question: {question}
-    """
+
+    Helpful Answer:"""
     prompt = ChatPromptTemplate.from_template(template)
 
     supabase_url = os.environ.get("SUPABASE_URL")
@@ -36,33 +45,32 @@ def initialize_RAG(embedding_model="all-mpnet-base-v2",
         table_name="documents",
         query_name="match_documents",
     )
-    llm = DeepInfra(model_id=model_name)
+
+    return prompt, vector_store
+
+
+def rag(query, prompt, vector_store, model, debug=False):
+    llm = DeepInfra(model_id=model)
     llm.model_kwargs = {
         "temperature": 0.1,
         "repetition_penalty": 1.2,
         "max_new_tokens": 250,
         "top_p": 0.9,
     }
-    
-    return prompt, vector_store, llm
-
-
-def rag(query, prompt, vector_store, llm, debug=False):
     retriever = vector_store.as_retriever()
-    
-    # RAG pipeline
+
     chain = (
-        {"context": retriever, "question": RunnablePassthrough()}
-        | prompt
-        | llm
-        | StrOutputParser()
+            {"context": retriever | format_docs, "question": RunnablePassthrough()}
+            | prompt
+            | llm
+            | StrOutputParser()
     )
     # llm_chain = LLMChain(prompt=prompt, llm=llm)
     
     # matched_docs = vector_store.similarity_search_with_relevance_scores(query)
-    matched_docs = retriever.get_relevant_documents(query)
 
     if debug:
+        matched_docs = retriever.get_relevant_documents(query)
         for i, d in enumerate(matched_docs):
             print(f"\n## Document {i}\n")
             print(d.page_content)
@@ -70,13 +78,27 @@ def rag(query, prompt, vector_store, llm, debug=False):
     return chain.invoke(query)
 
 
-def main(query):
-    load_dotenv()
-    
-    prompt, vector_store, llm = initialize_RAG()
-    rag(query, prompt=prompt, vector_store=vector_store, llm=llm)
-
-
 if __name__ == "__main__":
-    query = "What is bayesian optimization?"
-    main(query)
+    load_dotenv()
+
+    model_name = "meta-llama/Meta-Llama-3-8B-Instruct"
+    # model_name = "databricks/dbrx-instruct"
+
+    queries = ["What is bayesian optimization?",
+               "Where did Jagan do his masters?",
+               "Where did he work previously?",
+               "Where is he working currently",
+               "How many languages does he know?"]
+
+    prompt, vector_store = initialize_rag()
+
+    # qa = RetrievalQA.from_chain_type(
+    #     llm=llm,
+    #     chain_type="stuff",
+    #     retriever=vector_store.as_retriever(),
+    #     return_source_documents=True,
+    # )
+
+    for query in queries:
+        response = rag(query=query, prompt=prompt, vector_store=vector_store, model=model_name)
+        print(response)
