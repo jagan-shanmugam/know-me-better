@@ -13,8 +13,8 @@ from langchain_community.tools import DuckDuckGoSearchRun
 def main():
     choices = ["databricks/dbrx-instruct", ]
     with st.sidebar:
-        "[Read my CV here](https://platform.openai.com/account/api-keys)"
-        "Contact me: jaganshanmugam@outlook.com"
+        "Read my [CV here](https://github.com/jagan-shanmugam/know-me-better/blob/main/know_me_better/docs/CV_Jagan_Shanmugam.pdf)"
+        "Contact: jaganshanmugam@outlook.com"
 
         model = st.selectbox("Model", choices)
 
