@@ -41,7 +41,7 @@ def initialize_rag(embedding_model="BAAI/bge-base-en-v1.5"):
     # embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
     
     embeddings = DeepInfraEmbeddings(
-        model_id=embedding_model
+        model_id=embedding_model,
         query_instruction="",
         embed_instruction="",
         )
