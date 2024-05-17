@@ -60,7 +60,7 @@ def main():
     GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
     github_user_name = "jagan-shanmugam"
     github_repo_name = "Course-Work"
-    embedding_model = "all-mpnet-base-v2"
+    embedding_model = "BAAI/bge-base-en-v1.5"
     chunk_size = 1024
     chunk_overlap = 256
     

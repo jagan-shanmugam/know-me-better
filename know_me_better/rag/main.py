@@ -3,7 +3,8 @@ import os
 from dotenv import load_dotenv
 
 from langchain_community.vectorstores import SupabaseVectorStore
-from langchain_community.embeddings import HuggingFaceEmbeddings
+# from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import DeepInfraEmbeddings
 from langchain_community.llms import DeepInfra
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
@@ -19,7 +20,7 @@ def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
 
-def initialize_rag(embedding_model="all-mpnet-base-v2"):
+def initialize_rag(embedding_model="BAAI/bge-base-en-v1.5"):
 
     template = """Use the following pieces of context to answer the question at the end.
     If you don't know the answer, just say that you don't know, don't try to make up an answer.
@@ -37,7 +38,13 @@ def initialize_rag(embedding_model="all-mpnet-base-v2"):
     supabase_key = os.environ.get("SUPABASE_SERVICE_KEY")
     supabase: Client = create_client(supabase_url, supabase_key)
 
-    embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
+    # embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
+    
+    embeddings = DeepInfraEmbeddings(
+        model_id=embedding_model
+        query_instruction="",
+        embed_instruction="",
+        )
 
     vector_store = SupabaseVectorStore(
         embedding=embeddings,
